@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include "runner.h"
+#include "judge.h"
 
 int main() {
 
@@ -14,10 +15,22 @@ int main() {
         "test_cases/actual.out"
     );
 
-    if (status == 0) {
-        printf("Submission executed successfully.\n");
+    if (status != 0) {
+        printf("Runtime Error\n");
+        return 1;
+    }
+
+    printf("Submission executed successfully.\n");
+
+    int result = compare_output(
+        "test_cases/actual.out",
+        "test_cases/test1.out"
+    );
+
+    if (result == 1) {
+        printf("Result: ACCEPTED\n");
     } else {
-        printf("Submission failed.\n");
+        printf("Result: WRONG ANSWER\n");
     }
 
     return 0;
