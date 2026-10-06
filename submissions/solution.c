@@ -1,8 +1,12 @@
 #include <stdio.h>
-int main(){
- int n;
- scanf("%d",&n);
- printf("%d\n",n*n);
- return 0;
-}
 
+int main() {
+
+    int a, b;
+
+    scanf("%d %d", &a, &b);
+
+    printf("%d\n", a + b);
+
+    return 0;
+}
