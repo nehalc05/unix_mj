@@ -4,6 +4,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <fcntl.h>
+#include <signal.h>
+#include <time.h>
+
+#define TIME_LIMIT 2
 
 int run_program(const char *executable,
                 const char *input_file,
@@ -17,7 +21,7 @@ int run_program(const char *executable,
     }
 
     if (pid == 0) {
-        // Open input file
+
         int input = open(input_file, O_RDONLY);
 
         if (input < 0) {
@@ -25,40 +29,57 @@ int run_program(const char *executable,
             exit(1);
         }
 
-        // Open output file
         int output = open(output_file,
-                           O_WRONLY | O_CREAT | O_TRUNC,
-                           0644);
+                          O_WRONLY | O_CREAT | O_TRUNC,
+                          0644);
 
         if (output < 0) {
             perror("output file");
             exit(1);
         }
 
-        // Redirect standard input
         dup2(input, STDIN_FILENO);
-
-        // Redirect standard output
         dup2(output, STDOUT_FILENO);
 
         close(input);
         close(output);
 
-        // Replace child process with submitted program
         execl(executable, executable, (char *)NULL);
 
         perror("exec failed");
         exit(1);
     }
 
-    // Parent waits for child
-    int status;
+    time_t start_time = time(NULL);
 
-    waitpid(pid, &status, 0);
+    while (1) {
 
-    if (WIFEXITED(status)) {
-        return WEXITSTATUS(status);
+        int status;
+
+        pid_t result = waitpid(pid, &status, WNOHANG);
+
+        if (result == pid) {
+
+            if (WIFEXITED(status)) {
+                return WEXITSTATUS(status);
+            }
+
+            return -1;
+        }
+
+        if (result == -1) {
+            return -1;
+        }
+
+        if (difftime(time(NULL), start_time) >= TIME_LIMIT) {
+
+            kill(pid, SIGKILL);
+
+            waitpid(pid, NULL, 0);
+
+            return -2;
+        }
+
+        usleep(100000);
     }
-
-    return -1;
 }
